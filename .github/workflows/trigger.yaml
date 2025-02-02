@@ -3,7 +3,7 @@ name: Trigger Main Terraform Workflow
 on:
   push:
     branches:
-      - main   
+      - prod   # Changed to match your prod branch
     paths:
       - '**.tf'
       - '**.tfvars'
@@ -22,6 +22,7 @@ jobs:
               "event_type": "terraform-trigger",
               "client_payload": {
                 "repository": "${{ github.event.repository.name }}",
+                "branch": "prod",
                 "action": "plan"
               }
-            }
+            }'
