@@ -3,20 +3,28 @@ name: Trigger Main Terraform Workflow
 on:
   push:
     branches:
-      - prod   # Changed to match your prod branch
-    paths:
-      - '**.tf'
-      - '**.tfvars'
+      - prod   # or your actual branch name
+    # Removed the paths filter to trigger on all file changes
+  pull_request:
+    branches:
+      - prod   # Added PR trigger for completeness
 
 jobs:
   trigger-workflow:
     runs-on: ubuntu-latest
     steps:
+      - name: Debug Info
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref }}"
+          echo "Event: ${{ github.event_name }}"
+
       - name: Trigger Terraform Workflow
         run: |
-          curl -X POST \
+          response=$(curl -X POST \
             -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
+            -w "\nHTTP_STATUS:%{http_code}" \
             https://api.github.com/repos/${{ github.repository_owner }}/Dope/dispatches \
             -d '{
               "event_type": "terraform-trigger",
@@ -25,4 +33,11 @@ jobs:
                 "branch": "prod",
                 "action": "plan"
               }
-            }'
+            }')
+          
+          echo "Response: $response"
+          
+          if [[ $response == *"HTTP_STATUS:4"* ]] || [[ $response == *"HTTP_STATUS:5"* ]]; then
+            echo "Error triggering workflow"
+            exit 1
+          fi
